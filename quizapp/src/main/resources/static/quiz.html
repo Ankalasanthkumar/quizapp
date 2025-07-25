@@ -81,6 +81,13 @@
             margin-top: 10px;
             text-align: center;
         }
+        #score {
+            font-weight: bold;
+            margin-top: 20px;
+            text-align: center;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            display: none; /* Hide score throughout quiz */
+        }
         #progress {
             text-align: center;
             font-size: clamp(0.9rem, 2.5vw, 1rem);
@@ -281,6 +288,7 @@
             <button type="button" id="submitExam" style="display: none;">Submit</button>
             <button type="button" id="submitExit">Submit and Exit</button>
         </form>
+        <p id="score">Score: <span id="correct">0</span> / <span id="total">0</span></p>
         <div id="congratsMessage">Congratulations on completing the exam!</div>
     </div>
     <div id="resultsContainer" class="hidden">
@@ -365,6 +373,7 @@
         function loadSection(section) {
             console.log(`Loading section: ${section}`);
             document.getElementById('congratsMessage').style.display = 'none';
+            document.getElementById('score').style.display = 'none'; // Ensure score is hidden
             timeLeft = TIME_LIMIT;
             document.getElementById('timer').textContent = `Time Remaining: ${formatTime(timeLeft)}`;
             document.getElementById('submitExit').disabled = false;
