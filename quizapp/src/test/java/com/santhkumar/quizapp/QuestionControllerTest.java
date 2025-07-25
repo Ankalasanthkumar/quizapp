@@ -14,13 +14,28 @@ public class QuestionControllerTest {
     private TestRestTemplate restTemplate;
 
     @Test
-    public void testGetAllQuestions() {
-        ResponseEntity<QuestionDTO[]> response = restTemplate.getForEntity("/question/allQuestions", QuestionDTO[].class);
+    public void testGetQuestionsBySection_Programming() {
+        ResponseEntity<QuestionDTO[]> response = restTemplate.getForEntity("/question/section/Programming", QuestionDTO[].class);
         assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().length);
-        assertEquals("What is 2+2?", response.getBody()[0].getQuestionText());
-        assertEquals("What is the capital of France?", response.getBody()[1].getQuestionText());
+        assertEquals(10, response.getBody().length);
+        assertEquals("What is the output of `System.out.println(1 + 2 + \"3\");` in Java?", response.getBody()[0].getQuestionText());
+    }
+
+    @Test
+    public void testGetQuestionsBySection_Aptitude() {
+        ResponseEntity<QuestionDTO[]> response = restTemplate.getForEntity("/question/section/Aptitude", QuestionDTO[].class);
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals(10, response.getBody().length);
+    }
+
+    @Test
+    public void testGetQuestionsBySection_EnglishGrammar() {
+        ResponseEntity<QuestionDTO[]> response = restTemplate.getForEntity("/question/section/English Grammar", QuestionDTO[].class);
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertEquals(10, response.getBody().length);
     }
 
     @Test
@@ -28,7 +43,7 @@ public class QuestionControllerTest {
         ResponseEntity<QuestionDTO> response = restTemplate.getForEntity("/question/1", QuestionDTO.class);
         assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
-        assertEquals("What is 2+2?", response.getBody().getQuestionText());
+        assertEquals("What is the output of `System.out.println(1 + 2 + \"3\");` in Java?", response.getBody().getQuestionText());
     }
 
     @Test
@@ -39,14 +54,14 @@ public class QuestionControllerTest {
 
     @Test
     public void testSubmitAnswer_Correct() {
-        ResponseEntity<String> response = restTemplate.postForEntity("/question/submit?questionId=1&answer=4", null, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity("/question/submit?questionId=1&answer=123", null, String.class);
         assertEquals(200, response.getStatusCode().value());
         assertEquals("Correct!", response.getBody());
     }
 
     @Test
     public void testSubmitAnswer_Incorrect() {
-        ResponseEntity<String> response = restTemplate.postForEntity("/question/submit?questionId=1&answer=3", null, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity("/question/submit?questionId=1&answer=33", null, String.class);
         assertEquals(200, response.getStatusCode().value());
         assertEquals("Incorrect!", response.getBody());
     }

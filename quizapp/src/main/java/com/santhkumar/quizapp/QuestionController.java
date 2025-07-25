@@ -17,9 +17,9 @@ public class QuestionController {
         this.questionService = questionService;
     }
 
-    @GetMapping("allQuestions")
-    public List<QuestionDTO> getAllQuestions() {
-        return questionService.getAllQuestions();
+    @GetMapping("section/{section}")
+    public List<QuestionDTO> getQuestionsBySection(@PathVariable String section) {
+        return questionService.getQuestionsBySection(section);
     }
 
     @GetMapping("{id}")

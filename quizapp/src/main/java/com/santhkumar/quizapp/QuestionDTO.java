@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class QuestionDTO {
     private Long id;
+    private String section;
     private String questionText;
     private String option1;
     private String option2;

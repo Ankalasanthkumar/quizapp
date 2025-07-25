@@ -1,29 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Quiz App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            max-width: 800px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 1000px;
             margin-left: auto;
             margin-right: auto;
+            background-color: #f4f6f8;
+            line-height: 1.5;
         }
         h1 {
             text-align: center;
-            font-size: 2rem;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            color: #333;
+        }
+        h2 {
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            margin: 20px 0 10px;
+            color: #333;
+        }
+        .section {
+            margin-bottom: 20px;
         }
         .question {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
+            background-color: #fff;
+            transition: transform 0.2s ease;
+        }
+        .question:hover {
+            transform: translateY(-2px);
         }
         .question p {
             font-weight: bold;
             margin-bottom: 10px;
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 3vw, 1.2rem);
         }
         .options {
             display: flex;
@@ -33,158 +52,608 @@
         .options label {
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 1rem;
+            gap: 8px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        .options label:hover, .options label:focus-within {
+            background-color: #e6f0fa;
+        }
+        .options input:focus {
+            outline: 2px solid #007bff;
         }
         .result {
-            color: green;
+            color: #28a745;
             font-weight: bold;
             margin-top: 10px;
         }
         .incorrect {
-            color: red;
+            color: #dc3545;
             font-weight: bold;
             margin-top: 10px;
         }
         .error {
-            color: red;
+            color: #dc3545;
             font-weight: bold;
             margin-top: 10px;
+            text-align: center;
         }
         #score {
             font-weight: bold;
             margin-top: 20px;
             text-align: center;
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 3vw, 1.2rem);
         }
-        #submitAll {
+        #progress {
+            text-align: center;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            margin-bottom: 20px;
+            color: #555;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        #progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s ease;
+        }
+        #nextSection, #submitExam, #submitExit {
             display: block;
-            margin: 20px auto;
+            margin: 15px auto;
             padding: 10px 20px;
-            font-size: 1rem;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        #submitExit {
+            background-color: #dc3545;
+        }
+        #nextSection:hover, #submitExam:hover, #submitExit:hover {
+            background-color: #0056b3;
+        }
+        #nextSection:disabled, #submitExam:disabled, #submitExit:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        #timer {
+            text-align: center;
+            font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        #timer.warning {
+            color: #dc3545;
+        }
+        #congratsMessage, #resultsContainer {
+            display: none;
+            text-align: center;
+            font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+            font-weight: bold;
+            color: #28a745;
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #28a745;
+            border-radius: 8px;
+            background-color: #e6f3e6;
+        }
+        #loginContainer, #instructionsContainer {
+            text-align: center;
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+        #loginContainer.hidden, #instructionsContainer.hidden, #quizContainer.hidden, #resultsContainer.hidden {
+            display: none;
+        }
+        #loginForm, #quizForm, #instructionsForm {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        #loginForm input {
+            padding: 10px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #loginForm input:focus {
+            outline: 2px solid #007bff;
+        }
+        #loginForm button, #instructionsForm button {
+            padding: 10px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
             background-color: #007bff;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
         }
-        #submitAll:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
+        #loginForm button:hover, #instructionsForm button:hover {
+            background-color: #0056b3;
+        }
+        #defaultCredentials {
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            color: #333;
+            margin-bottom: 20px;
+            animation: blink 1s infinite;
+        }
+        #loginError {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+        }
+        #instructionsContainer ul {
+            text-align: left;
+            margin: 20px 0;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+        }
+        .copyright {
+            background-color: #000;
+            color: #fff;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            text-align: center;
         }
 
         /* Responsive Design */
         @media (max-width: 600px) {
-            h1 {
-                font-size: 1.5rem;
+            body {
+                padding: 10px;
             }
-            .question p {
-                font-size: 1rem;
+            .question {
+                padding: 10px;
             }
             .options label {
-                font-size: 0.9rem;
+                flex-direction: column;
+                align-items: flex-start;
             }
-            #submitAll {
-                padding: 8px 16px;
-                font-size: 0.9rem;
+            #nextSection, #submitExam, #submitExit {
+                width: 100%;
+                max-width: 300px;
+            }
+            #loginContainer, #instructionsContainer {
+                margin: 20px 10px;
+                padding: 15px;
+            }
+            .copyright {
+                font-size: 0.8rem;
+            }
+        }
+        @media (min-width: 601px) and (max-width: 900px) {
+            .question {
+                padding: 12px;
+            }
+            #nextSection, #submitExam, #submitExit {
+                width: 80%;
+            }
+        }
+        @keyframes blink {
+            50% {
+                opacity: 0;
             }
         }
     </style>
 </head>
 <body>
-    <h1>Quiz App</h1>
-    <form id="quizForm">
-        <div id="questions"></div>
-        <button type="submit" id="submitAll">Submit All Answers</button>
-    </form>
-    <p id="score">Score: <span id="correct">0</span> / <span id="total">0</span></p>
+    <div id="loginContainer">
+        <h1>Quiz App Login</h1>
+        <p id="defaultCredentials">User ID: santhkumar | Password: santhkumar</p>
+        <form id="loginForm">
+            <input type="text" id="userId" placeholder="Enter User ID" required aria-label="User ID">
+            <input type="password" id="password" placeholder="Enter Password" required aria-label="Password">
+            <button type="submit">Login</button>
+        </form>
+        <p id="loginError">Invalid User ID or Password!</p>
+    </div>
+    <div id="instructionsContainer" class="hidden">
+        <h1>Quiz Instructions</h1>
+        <div id="instructionsTimer">Time to read instructions: 00:30</div>
+        <ul>
+            <li>Total exam duration: 15 minutes (5 minutes per section).</li>
+            <li>3 sections: Programming (10 Java/SQL questions), Aptitude (10 advanced questions), English Grammar (10 questions).</li>
+            <li>Pass criteria: Score above 70% (21/30 correct answers) across all sections.</li>
+            <li>Use arrow keys to navigate options, Enter to select.</li>
+        </ul>
+        <form id="instructionsForm">
+            <button type="submit" id="startQuiz">Next</button>
+        </form>
+    </div>
+    <div id="quizContainer" class="hidden">
+        <h1>Quiz App</h1>
+        <div id="progress">Section <span id="currentSection">1</span> of 3</div>
+        <div id="progress-bar"><div id="progress-fill"></div></div>
+        <div id="timer">Time Remaining: 05:00</div>
+        <form id="questionForm">
+            <div id="questions"></div>
+            <button type="button" id="nextSection" style="display: none;">Next Section</button>
+            <button type="button" id="submitExam" style="display: none;">Submit</button>
+            <button type="button" id="submitExit">Submit and Exit</button>
+        </form>
+        <p id="score">Score: <span id="correct">0</span> / <span id="total">0</span></p>
+        <div id="congratsMessage">Congratulations on completing the exam!</div>
+    </div>
+    <div id="resultsContainer" class="hidden">
+        <h1>Quiz Results</h1>
+        <p id="sectionScores"></p>
+        <p id="finalScore"></p>
+        <p id="passStatus"></p>
+        <div class="copyright">© 2025 Ankala Santhkumar</div>
+    </div>
 
     <script>
+        const DEFAULT_USERID = 'santhkumar';
+        const DEFAULT_PASSWORD = 'santhkumar';
+        const SECTIONS = ['Programming', 'Aptitude', 'English Grammar'];
+        const TIME_LIMIT = 300; // 5 minutes per section
+        let currentSectionIndex = 0;
         let correctAnswers = 0;
         let totalAttempts = 0;
-        let submitted = false;
+        let timeLeft = TIME_LIMIT;
+        let timerInterval;
+        const allAnswers = [];
+        const sectionScores = { Programming: { correct: 0, total: 0 }, Aptitude: { correct: 0, total: 0 }, 'English Grammar': { correct: 0, total: 0 } };
 
-        function updateScore() {
-            document.getElementById('correct').innerText = correctAnswers;
-            document.getElementById('total').innerText = totalAttempts;
+        document.getElementById('loginForm').addEventListener('submit', event => {
+            event.preventDefault();
+            const userId = document.getElementById('userId').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const loginError = document.getElementById('loginError');
+
+            if (userId === DEFAULT_USERID && password === DEFAULT_PASSWORD) {
+                console.log('Login successful');
+                document.getElementById('loginContainer').classList.add('hidden');
+                document.getElementById('instructionsContainer').classList.remove('hidden');
+                startInstructionsTimer();
+            } else {
+                loginError.style.display = 'block';
+                console.log('Login failed: Invalid credentials');
+            }
+        });
+
+        function startInstructionsTimer() {
+            let instructionTime = 30;
+            const instructionsTimer = document.getElementById('instructionsTimer');
+            const interval = setInterval(() => {
+                instructionTime--;
+                instructionsTimer.textContent = `Time to read instructions: ${formatTime(instructionTime)}`;
+                if (instructionTime <= 0) {
+                    clearInterval(interval);
+                    console.log('Instructions timed out, starting quiz');
+                    startQuiz();
+                }
+            }, 1000);
+
+            document.getElementById('instructionsForm').addEventListener('submit', event => {
+                event.preventDefault();
+                clearInterval(interval);
+                console.log('Instructions completed manually');
+                startQuiz();
+            });
         }
 
-        fetch('/question/allQuestions')
-            .then(response => response.json())
-            .then(data => {
-                const questionsDiv = document.getElementById('questions');
-                data.forEach(q => {
-                    const questionDiv = document.createElement('div');
-                    questionDiv.className = 'question';
-                    questionDiv.innerHTML = `
-                        <p>${q.questionText}</p>
-                        <div class="options">
-                            <label><input type="radio" name="answer_${q.id}" value="${q.option1}" required> A) ${q.option1}</label>
-                            <label><input type="radio" name="answer_${q.id}" value="${q.option2}"> B) ${q.option2}</label>
-                            <label><input type="radio" name="answer_${q.id}" value="${q.option3}"> C) ${q.option3}</label>
-                            <label><input type="radio" name="answer_${q.id}" value="${q.option4}"> D) ${q.option4}</label>
-                        </div>
-                        <p class="result" id="result_${q.id}"></p>
-                    `;
-                    questionsDiv.appendChild(questionDiv);
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function startQuiz() {
+            console.log('Starting quiz');
+            document.getElementById('instructionsContainer').classList.add('hidden');
+            document.getElementById('quizContainer').classList.remove('hidden');
+            loadSection(SECTIONS[currentSectionIndex]);
+        }
+
+        function updateProgress() {
+            const currentSectionDisplay = document.getElementById('currentSection');
+            currentSectionDisplay.textContent = currentSectionIndex + 1;
+            const progressFill = document.getElementById('progress-fill');
+            progressFill.style.width = `${((currentSectionIndex + 1) / SECTIONS.length) * 100}%`;
+        }
+
+        function loadSection(section) {
+            console.log(`Loading section: ${section}`);
+            document.getElementById('congratsMessage').style.display = 'none';
+            document.getElementById('score').textContent = `Score: ${correctAnswers} / ${totalAttempts}`;
+            timeLeft = TIME_LIMIT;
+            document.getElementById('timer').textContent = `Time Remaining: ${formatTime(timeLeft)}`;
+            document.getElementById('submitExit').disabled = false;
+
+            // Update progress
+            updateProgress();
+
+            // Show appropriate button
+            const nextSectionButton = document.getElementById('nextSection');
+            const submitExamButton = document.getElementById('submitExam');
+            if (currentSectionIndex < SECTIONS.length - 1) {
+                nextSectionButton.style.display = 'block';
+                submitExamButton.style.display = 'none';
+            } else {
+                nextSectionButton.style.display = 'none';
+                submitExamButton.style.display = 'block';
+            }
+
+            // Clear existing event listeners
+            const quizForm = document.getElementById('questionForm');
+            const newQuizForm = quizForm.cloneNode(true);
+            quizForm.parentNode.replaceChild(newQuizForm, quizForm);
+
+            const submitExit = document.getElementById('submitExit');
+            const newSubmitExit = submitExit.cloneNode(true);
+            submitExit.parentNode.replaceChild(newSubmitExit, submitExit);
+
+            const newNextSection = nextSectionButton.cloneNode(true);
+            nextSectionButton.parentNode.replaceChild(newNextSection, nextSectionButton);
+
+            const newSubmitExam = submitExamButton.cloneNode(true);
+            submitExamButton.parentNode.replaceChild(newSubmitExam, submitExamButton);
+
+            fetch(`/question/section/${encodeURIComponent(section)}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`Failed to fetch questions for ${section}: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(`Fetched ${data.length} questions for ${section}`);
+                    const questionsDiv = document.getElementById('questions');
+                    questionsDiv.innerHTML = `<h2>${section}</h2>`;
+                    data.forEach((q, index) => {
+                        const questionDiv = document.createElement('div');
+                        questionDiv.className = 'question';
+                        questionDiv.innerHTML = `
+                            <p>${index + 1}. ${q.questionText}</p>
+                            <div class="options">
+                                <label><input type="radio" name="answer_${q.id}" value="${q.option1}" aria-label="Option A"> A) ${q.option1}</label>
+                                <label><input type="radio" name="answer_${q.id}" value="${q.option2}" aria-label="Option B"> B) ${q.option2}</label>
+                                <label><input type="radio" name="answer_${q.id}" value="${q.option3}" aria-label="Option C"> C) ${q.option3}</label>
+                                <label><input type="radio" name="answer_${q.id}" value="${q.option4}" aria-label="Option D"> D) ${q.option4}</label>
+                            </div>
+                            <p class="result" id="result_${q.id}"></p>
+                        `;
+                        questionsDiv.appendChild(questionDiv);
+                    });
+                    startTimer();
+                    enableKeyboardNavigation();
+                })
+                .catch(error => {
+                    console.error(`Error loading section ${section}:`, error);
+                    document.getElementById('questions').innerHTML = '<p class="error">Error loading questions!</p>';
                 });
-            })
-            .catch(error => {
-                const questionsDiv = document.getElementById('questions');
-                questionsDiv.innerHTML = '<p class="error">Error loading questions!</p>';
-            });
 
-        document.getElementById('quizForm').addEventListener('submit', event => {
-            event.preventDefault();
-            if (submitted) return; // Prevent multiple submissions
-
-            const submitButton = document.getElementById('submitAll');
-            submitButton.disabled = true; // Disable button
-            submitted = true;
-
-            const form = document.getElementById('quizForm');
-            const answers = [];
-            document.querySelectorAll('.question').forEach(questionDiv => {
-                const questionId = questionDiv.querySelector('input[name^="answer_"]').name.split('_')[1];
-                const selectedAnswer = questionDiv.querySelector(`input[name="answer_${questionId}"]:checked`);
-                if (selectedAnswer) {
-                    answers.push({ questionId, answer: selectedAnswer.value });
-                } else {
-                    document.getElementById(`result_${questionId}`).className = 'error';
-                    document.getElementById(`result_${questionId}`).innerText = 'Please select an option!';
+            document.getElementById('nextSection').addEventListener('click', () => {
+                console.log(`Moving to next section: ${SECTIONS[currentSectionIndex + 1]}`);
+                saveAnswers();
+                currentSectionIndex++;
+                if (currentSectionIndex < SECTIONS.length) {
+                    clearInterval(timerInterval);
+                    loadSection(SECTIONS[currentSectionIndex]);
                 }
             });
 
-            if (answers.length === document.querySelectorAll('.question').length) {
-                Promise.all(answers.map(({ questionId, answer }) =>
-                    fetch(`/question/submit?questionId=${questionId}&answer=${encodeURIComponent(answer)}`, {
-                        method: 'POST'
+            document.getElementById('submitExam').addEventListener('click', () => {
+                console.log('Submitting exam');
+                saveAnswers();
+                submitExam();
+            });
+
+            document.getElementById('submitExit').addEventListener('click', () => {
+                if (confirm('Are you sure you want to submit and exit? Your answers will be submitted.')) {
+                    console.log('Submitting and exiting');
+                    saveAnswers();
+                    submitExam();
+                } else {
+                    console.log('Submit and exit canceled');
+                }
+            });
+        }
+
+        function startTimer() {
+            const timerDisplay = document.getElementById('timer');
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `Time Remaining: ${formatTime(timeLeft)}`;
+                if (timeLeft <= 30) {
+                    timerDisplay.classList.add('warning');
+                }
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    console.log(`Time expired for section ${SECTIONS[currentSectionIndex]}`);
+                    saveAnswers();
+                    currentSectionIndex++;
+                    if (currentSectionIndex < SECTIONS.length) {
+                        loadSection(SECTIONS[currentSectionIndex]);
+                    } else {
+                        submitExam();
+                    }
+                }
+            }, 1000);
+        }
+
+        function enableKeyboardNavigation() {
+            document.querySelectorAll('.question').forEach((question, qIndex) => {
+                const radios = question.querySelectorAll('input[type="radio"]');
+                radios.forEach((radio, rIndex) => {
+                    radio.addEventListener('keydown', event => {
+                        if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+                            event.preventDefault();
+                            const nextIndex = (rIndex + 1) % radios.length;
+                            radios[nextIndex].focus();
+                        } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+                            event.preventDefault();
+                            const prevIndex = (rIndex - 1 + radios.length) % radios.length;
+                            radios[prevIndex].focus();
+                        } else if (event.key === 'Enter') {
+                            radio.checked = true;
+                        }
+                    });
+                });
+            });
+        }
+
+        function saveAnswers() {
+            const currentAnswers = [];
+            document.querySelectorAll('.question').forEach(questionDiv => {
+                const questionId = questionDiv.querySelector('input[name^="answer_"]').name.split('_')[1];
+                const selectedAnswer = questionDiv.querySelector(`input[name="answer_${questionId}"]:checked`);
+                currentAnswers.push({
+                    questionId: parseInt(questionId),
+                    answer: selectedAnswer ? selectedAnswer.value : '',
+                    section: SECTIONS[currentSectionIndex]
+                });
+            });
+
+            currentAnswers.forEach(newAnswer => {
+                const existingIndex = allAnswers.findIndex(a => a.questionId === newAnswer.questionId);
+                if (existingIndex !== -1) {
+                    allAnswers[existingIndex] = newAnswer;
+                } else {
+                    allAnswers.push(newAnswer);
+                }
+            });
+            console.log(`Saved answers for section ${SECTIONS[currentSectionIndex]}:`, JSON.stringify(allAnswers));
+        }
+
+        function submitExam() {
+            clearInterval(timerInterval);
+            document.getElementById('timer').textContent = `Time Remaining: ${formatTime(0)}`;
+            document.getElementById('submitExit').disabled = true;
+            document.getElementById('nextSection').disabled = true;
+            document.getElementById('submitExam').disabled = true;
+
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.disabled = true;
+            });
+
+            const uniqueAnswers = [];
+            const seenQuestionIds = new Set();
+            allAnswers.forEach(answer => {
+                if (!seenQuestionIds.has(answer.questionId) && answer.answer) {
+                    uniqueAnswers.push(answer);
+                    seenQuestionIds.add(answer.questionId);
+                }
+            });
+
+            console.log('Submitting answers:', JSON.stringify(uniqueAnswers));
+
+            if (uniqueAnswers.length === 0) {
+                console.log('No valid answers selected, showing results with zero score');
+                totalAttempts = 0;
+                correctAnswers = 0;
+                Object.keys(sectionScores).forEach(section => {
+                    sectionScores[section].correct = 0;
+                    sectionScores[section].total = 0;
+                });
+                showResults();
+                return;
+            }
+
+            Promise.all(uniqueAnswers.map(({ questionId, answer, section }) =>
+                fetch(`/question/submit?questionId=${questionId}&answer=${encodeURIComponent(answer)}`, {
+                    method: 'POST'
+                })
+                    .then(response => {
+                        console.log(`Response for question ${questionId}: ${response.status}`);
+                        if (!response.ok) throw new Error(`Submission failed for question ${questionId}: ${response.status}`);
+                        return response.text();
                     })
-                        .then(response => response.text())
-                        .then(result => ({ questionId, result }))
-                ))
-                    .then(results => {
-                        totalAttempts = answers.length;
-                        results.forEach(({ questionId, result }) => {
-                            document.getElementById(`result_${questionId}`).className = result === 'Correct!' ? 'result' : 'incorrect';
-                            document.getElementById(`result_${questionId}`).innerText = result;
-                            if (result === 'Correct!') {
-                                correctAnswers++;
-                            }
-                        });
-                        updateScore();
+                    .then(result => {
+                        console.log(`Result for question ${questionId}: ${result}`);
+                        return { questionId, result: result.trim() === 'Correct!' ? 'Correct!' : 'Incorrect!', section };
                     })
                     .catch(error => {
-                        document.querySelectorAll('.result').forEach(result => {
-                            result.className = 'error';
-                            result.innerText = 'Error submitting answers!';
-                        });
+                        console.error(`Error submitting answer for question ${questionId}:`, error);
+                        return { questionId, result: 'Incorrect!', section };
+                    })
+            ))
+                .then(results => {
+                    totalAttempts = uniqueAnswers.length;
+                    correctAnswers = 0;
+                    Object.keys(sectionScores).forEach(section => {
+                        sectionScores[section].correct = 0;
+                        sectionScores[section].total = 0;
                     });
+
+                    results.forEach(({ questionId, result, section }) => {
+                        const questionDiv = document.querySelector(`input[name="answer_${questionId}"]`)?.closest('.question');
+                        if (questionDiv) {
+                            const resultElement = document.getElementById(`result_${questionId}`);
+                            if (resultElement) {
+                                resultElement.className = result === 'Correct!' ? 'result' : 'incorrect';
+                                resultElement.innerText = result;
+                            } else {
+                                console.warn(`Result element for question ${questionId} not found`);
+                            }
+                        } else {
+                            console.warn(`Question ${questionId} not found in DOM`);
+                        }
+                        sectionScores[section].total++;
+                        if (result === 'Correct!') {
+                            correctAnswers++;
+                            sectionScores[section].correct++;
+                        }
+                    });
+                    document.getElementById('score').textContent = `Score: ${correctAnswers} / ${totalAttempts}`;
+                    document.getElementById('congratsMessage').style.display = 'block';
+                    console.log(`Submission complete, score: ${correctAnswers}/${totalAttempts}`);
+                    showResults();
+                })
+                .catch(error => {
+                    console.error('Error processing exam submission:', error);
+                    document.getElementById('questions').innerHTML += '<p class="error">Error submitting answers!</p>';
+                    totalAttempts = uniqueAnswers.length;
+                    correctAnswers = 0;
+                    Object.keys(sectionScores).forEach(section => {
+                        sectionScores[section].correct = 0;
+                        sectionScores[section].total = 0;
+                    });
+                    showResults();
+                });
+        }
+
+        function showResults() {
+            console.log('Showing final results');
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.style.display = 'block';
+            document.getElementById('quizContainer').style.display = 'none';
+            const percentage = totalAttempts > 0 ? (correctAnswers / totalAttempts) * 100 : 0;
+            const passStatus = percentage >= 70 ? 'Passed' : 'Failed';
+            const sectionScoresElement = document.getElementById('sectionScores');
+            const finalScoreElement = document.getElementById('finalScore');
+            const passStatusElement = document.getElementById('passStatus');
+
+            if (sectionScoresElement && finalScoreElement && passStatusElement) {
+                sectionScoresElement.innerHTML = Object.entries(sectionScores)
+                    .filter(([_, scores]) => scores.total > 0)
+                    .map(([section, scores]) => `${section}: ${scores.correct} / ${scores.total} (${(scores.correct / scores.total * 100).toFixed(2)}%)`)
+                    .join('<br>');
+                finalScoreElement.textContent = `Final Score: ${correctAnswers} / ${totalAttempts} (${percentage.toFixed(2)}%)`;
+                passStatusElement.textContent = `Status: ${passStatus}`;
+                console.log(`Final score: ${correctAnswers}/${totalAttempts}, Percentage: ${percentage.toFixed(2)}%, Status: ${passStatus}`);
             } else {
-                submitButton.disabled = false; // Re-enable if not all questions answered
-                submitted = false;
+                console.error('Result elements not found');
+                resultsContainer.innerHTML += '<p class="error">Error displaying results!</p>';
             }
-        });
+        }
     </script>
 </body>
 </html>
