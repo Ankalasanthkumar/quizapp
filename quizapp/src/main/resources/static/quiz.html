@@ -81,12 +81,6 @@
             margin-top: 10px;
             text-align: center;
         }
-        #score {
-            font-weight: bold;
-            margin-top: 20px;
-            text-align: center;
-            font-size: clamp(1rem, 3vw, 1.2rem);
-        }
         #progress {
             text-align: center;
             font-size: clamp(0.9rem, 2.5vw, 1rem);
@@ -214,8 +208,6 @@
             font-size: clamp(0.8rem, 2vw, 0.9rem);
             text-align: center;
         }
-
-        /* Responsive Design */
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -283,13 +275,12 @@
         <div id="progress">Section <span id="currentSection">1</span> of 3</div>
         <div id="progress-bar"><div id="progress-fill"></div></div>
         <div id="timer">Time Remaining: 05:00</div>
-        <form id="questionForm">
+        <form id="quizForm">
             <div id="questions"></div>
             <button type="button" id="nextSection" style="display: none;">Next Section</button>
             <button type="button" id="submitExam" style="display: none;">Submit</button>
             <button type="button" id="submitExit">Submit and Exit</button>
         </form>
-        <p id="score">Score: <span id="correct">0</span> / <span id="total">0</span></p>
         <div id="congratsMessage">Congratulations on completing the exam!</div>
     </div>
     <div id="resultsContainer" class="hidden">
@@ -374,7 +365,6 @@
         function loadSection(section) {
             console.log(`Loading section: ${section}`);
             document.getElementById('congratsMessage').style.display = 'none';
-            document.getElementById('score').textContent = `Score: ${correctAnswers} / ${totalAttempts}`;
             timeLeft = TIME_LIMIT;
             document.getElementById('timer').textContent = `Time Remaining: ${formatTime(timeLeft)}`;
             document.getElementById('submitExit').disabled = false;
@@ -394,7 +384,7 @@
             }
 
             // Clear existing event listeners
-            const quizForm = document.getElementById('questionForm');
+            const quizForm = document.getElementById('quizForm');
             const newQuizForm = quizForm.cloneNode(true);
             quizForm.parentNode.replaceChild(newQuizForm, quizForm);
 
@@ -612,7 +602,6 @@
                             sectionScores[section].correct++;
                         }
                     });
-                    document.getElementById('score').textContent = `Score: ${correctAnswers} / ${totalAttempts}`;
                     document.getElementById('congratsMessage').style.display = 'block';
                     console.log(`Submission complete, score: ${correctAnswers}/${totalAttempts}`);
                     showResults();
