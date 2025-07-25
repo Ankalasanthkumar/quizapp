@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+        }
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .question p {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 1rem;
+        }
+        .result {
+            color: green;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .incorrect {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        #score {
+            font-weight: bold;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+        #submitAll {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #submitAll:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            .question p {
+                font-size: 1rem;
+            }
+            .options label {
+                font-size: 0.9rem;
+            }
+            #submitAll {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Quiz App</h1>
+    <form id="quizForm">
+        <div id="questions"></div>
+        <button type="submit" id="submitAll">Submit All Answers</button>
+    </form>
+    <p id="score">Score: <span id="correct">0</span> / <span id="total">0</span></p>
+
+    <script>
+        let correctAnswers = 0;
+        let totalAttempts = 0;
+        let submitted = false;
+
+        function updateScore() {
+            document.getElementById('correct').innerText = correctAnswers;
+            document.getElementById('total').innerText = totalAttempts;
+        }
+
+        fetch('/question/allQuestions')
+            .then(response => response.json())
+            .then(data => {
+                const questionsDiv = document.getElementById('questions');
+                data.forEach(q => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'question';
+                    questionDiv.innerHTML = `
+                        <p>${q.questionText}</p>
+                        <div class="options">
+                            <label><input type="radio" name="answer_${q.id}" value="${q.option1}" required> A) ${q.option1}</label>
+                            <label><input type="radio" name="answer_${q.id}" value="${q.option2}"> B) ${q.option2}</label>
+                            <label><input type="radio" name="answer_${q.id}" value="${q.option3}"> C) ${q.option3}</label>
+                            <label><input type="radio" name="answer_${q.id}" value="${q.option4}"> D) ${q.option4}</label>
+                        </div>
+                        <p class="result" id="result_${q.id}"></p>
+                    `;
+                    questionsDiv.appendChild(questionDiv);
+                });
+            })
+            .catch(error => {
+                const questionsDiv = document.getElementById('questions');
+                questionsDiv.innerHTML = '<p class="error">Error loading questions!</p>';
+            });
+
+        document.getElementById('quizForm').addEventListener('submit', event => {
+            event.preventDefault();
+            if (submitted) return; // Prevent multiple submissions
+
+            const submitButton = document.getElementById('submitAll');
+            submitButton.disabled = true; // Disable button
+            submitted = true;
+
+            const form = document.getElementById('quizForm');
+            const answers = [];
+            document.querySelectorAll('.question').forEach(questionDiv => {
+                const questionId = questionDiv.querySelector('input[name^="answer_"]').name.split('_')[1];
+                const selectedAnswer = questionDiv.querySelector(`input[name="answer_${questionId}"]:checked`);
+                if (selectedAnswer) {
+                    answers.push({ questionId, answer: selectedAnswer.value });
+                } else {
+                    document.getElementById(`result_${questionId}`).className = 'error';
+                    document.getElementById(`result_${questionId}`).innerText = 'Please select an option!';
+                }
+            });
+
+            if (answers.length === document.querySelectorAll('.question').length) {
+                Promise.all(answers.map(({ questionId, answer }) =>
+                    fetch(`/question/submit?questionId=${questionId}&answer=${encodeURIComponent(answer)}`, {
+                        method: 'POST'
+                    })
+                        .then(response => response.text())
+                        .then(result => ({ questionId, result }))
+                ))
+                    .then(results => {
+                        totalAttempts = answers.length;
+                        results.forEach(({ questionId, result }) => {
+                            document.getElementById(`result_${questionId}`).className = result === 'Correct!' ? 'result' : 'incorrect';
+                            document.getElementById(`result_${questionId}`).innerText = result;
+                            if (result === 'Correct!') {
+                                correctAnswers++;
+                            }
+                        });
+                        updateScore();
+                    })
+                    .catch(error => {
+                        document.querySelectorAll('.result').forEach(result => {
+                            result.className = 'error';
+                            result.innerText = 'Error submitting answers!';
+                        });
+                    });
+            } else {
+                submitButton.disabled = false; // Re-enable if not all questions answered
+                submitted = false;
+            }
+        });
+    </script>
+</body>
+</html>
